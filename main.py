@@ -39,6 +39,10 @@ def get_args():
 
 
 def main():
+    # Ensure the logs directory exists
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+
     beg_time, mid_time, end_time, predict_acc = [], [], [], []
     res_acc, res_loss, res_geno = [], [], []
     for index in range(args.run_times):
@@ -48,22 +52,29 @@ def main():
         args.dropout = 0.6
         args.time = time.strftime('%Y%m%d-%H%M%S')
         beg_time.append(args.time)
-        args.save = 'logs/{}-{}-{}'.format(time.strftime('%Y%m%d-%H%M%S'), args.data, index+1)
+        args.save = 'logs/{}-{}-{}'.format(time.strftime('%Y%m%d-%H%M%S'), args.data, index + 1)
         args.tune_genotype = np.random.random()
+        
+        # Ensure the specific run folder exists
         if not os.path.exists(args.save):
             os.mkdir(args.save)
+        
         log = Log(args)
         args.seed = random.randint(0, 10000)
+        
         with open("{}/temp.txt".format(args.save), "w") as f:
             f.write('{}'.format(99999.99))
+        
         trainer = Evolution_Trainer(args, log)
         middle_time, top_loss, top_acc, top_geno, pre_acc_arc = trainer.train()
+        
         mid_time.append(middle_time)
         res_acc.append(top_acc)
         res_loss.append(top_loss)
         res_geno.append(top_geno)
         predict_acc.append(pre_acc_arc)
         end_time.append(time.strftime('%Y%m%d-%H%M%S'))
+        
         if index == args.run_times - 1:
             log.info('{}: Acc: {}, Mean: {:.4f}, Std: {:.4f}.'.format(time.strftime('%Y%m%d-%H%M%S'), res_acc, np.mean(res_acc), np.std(res_acc)))
             log.info('{}: Begin times: {}.'.format(time.strftime('%Y%m%d-%H%M%S'), beg_time))
