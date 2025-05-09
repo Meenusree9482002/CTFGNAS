@@ -1,6 +1,7 @@
 import copy
 import logging
 import sys
+import os  # Added os for directory handling
 from torch_geometric.datasets import Planetoid, Actor, WebKB
 import random
 import numpy as np
@@ -36,28 +37,47 @@ class Log(object):
         self.__get_logger()
 
     def __get_logger(self):
+        # Ensure the directory exists for saving logs
+        if not os.path.exists(self.save):
+            try:
+                os.makedirs(self.save)
+            except Exception as e:
+                print(f"Error creating log directory: {e}")
+                sys.exit(1)
+
         if self._logger is None:
             logger = logging.getLogger("CTFGNAS")
             logger.handlers.clear()
             formatter = logging.Formatter('%(message)s')
-            save_name = '{}/{}-{}.txt'.format(self.save, self.data, self.time)
-            file_handler = logging.FileHandler(save_name)
-            file_handler.setFormatter(formatter)
-            console_handler = logging.StreamHandler(sys.stdout)
-            console_handler.formatter = formatter
-            logger.addHandler(file_handler)
-            logger.addHandler(console_handler)
-            logger.setLevel(logging.INFO)
-            self._logger = logger
-            return logger
-        else:
-            return self._logger
+
+            save_name = os.path.join(self.save, f'{self.data}-{self.time}.txt')
+            try:
+                file_handler = logging.FileHandler(save_name)
+                file_handler.setFormatter(formatter)
+                console_handler = logging.StreamHandler(sys.stdout)
+                console_handler.setFormatter(formatter)
+
+                logger.addHandler(file_handler)
+                logger.addHandler(console_handler)
+                logger.setLevel(logging.INFO)
+                self._logger = logger
+            except Exception as e:
+                print(f"Error setting up logger: {e}")
+                sys.exit(1)
+
+        return self._logger
 
     def info(self, _str):
-        self.__get_logger().info(_str)
+        try:
+            self.__get_logger().info(_str)
+        except Exception as e:
+            print(f"Error logging info: {e}")
 
     def warn(self, _str):
-        self.__get_logger().warning(_str)
+        try:
+            self.__get_logger().warning(_str)
+        except Exception as e:
+            print(f"Error logging warning: {e}")
 
 
 def choose_one_parent(parents):
